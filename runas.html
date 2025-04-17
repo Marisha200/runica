@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oráculo de Runas Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        /* Estilos base */
+        body {
+            font-family: 'Merriweather', serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+        }
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .rune-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 95%;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            overflow-y: auto;
+             scrollbar-width: thin;
+             scrollbar-color: #a0aec0 #e2e8f0;
+        }
+         .rune-card::-webkit-scrollbar { width: 8px; }
+         .rune-card::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px;}
+         .rune-card::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 4px; border: 2px solid #e2e8f0;}
+
+        .rune-card h1 {
+            font-family: 'Merriweather', serif;
+            color: #1a202c;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .poetic-subtitle {
+            font-family: 'Merriweather', serif;
+            font-style: italic;
+            color: #718096;
+            font-size: 1rem;
+            margin-bottom: 1.5rem; /* Espacio antes del contenido de la runa */
+        }
+
+        /* Área de display de la runa */
+        #rune-display {
+             width: 100%;
+             margin-bottom: 2rem; /* Espacio antes de los botones */
+        }
+        #rune-symbol {
+            font-size: 7rem;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            color: #5a67d8;
+            font-family: sans-serif;
+            min-height: 112px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #rune-name {
+             color: #2d3748;
+             margin-bottom: 1.5rem;
+        }
+        .text-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            text-align: left;
+            background-color: #f7fafc;
+        }
+        .text-section h3 {
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #5a67d8;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        .text-section div, .text-section p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #4a5568;
+        }
+         #rune-positive-message-container {
+            background-color: #ebf4ff;
+            border-color: #bee3f8;
+            text-align: center;
+         }
+        #rune-positive-message {
+            color: #3182ce;
+            font-weight: 700;
+            font-style: italic;
+        }
+        #rune-positive-message-container h3 {
+             border-bottom: none;
+             text-align: center;
+             color: #3182ce;
+        }
+
+        /* Contenedor para botones (al final) */
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: auto; /* Empuja los botones al final si hay espacio */
+            padding-top: 1.5rem; /* Espacio arriba de los botones */
+        }
+
+        /* Botones */
+        button.action-btn {
+            background-color: #5a67d8; /* Índigo */
+            color: #ffffff; /* Texto blanco */
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            width: fit-content;
+            cursor: pointer;
+        }
+        button.action-btn:hover {
+            background-color: #4c51bf;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+         button.action-btn:active {
+             transform: translateY(0);
+             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button#download-pdf-btn:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+         button#download-pdf-btn {
+             background-color: #718096;
+         }
+         button#download-pdf-btn:hover:not(:disabled) {
+             background-color: #4a5568;
+         }
+
+        /* Animación */
+        .rolling {
+            animation: roll 0.7s ease-in-out;
+        }
+        @keyframes roll {
+            0% { transform: rotate(0deg) scale(1); opacity: 0.5; }
+            25% { transform: rotate(15deg) scale(1.1); opacity: 0.7; }
+            50% { transform: rotate(-10deg) scale(0.9); opacity: 1; }
+            75% { transform: rotate(5deg) scale(1.05); opacity: 0.7; }
+            100% { transform: rotate(0deg) scale(1); opacity: 1; }
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="main-container">
+        <div class="rune-card">
+            <h1 class="text-3xl">Oráculo de Runas</h1>
+            <p class="poetic-subtitle">Un susurro de Odín para vos.</p>
+
+            <div id="pdf-content-area"> <div id="rune-display">
+                    <div id="rune-symbol" class="font-bold" style="display: none;">?</div>
+                    <div id="rune-name" class="text-2xl font-semibold" style="display: none;">-</div>
+
+                    <p id="placeholder-message" class="text-gray-500 mt-4 text-center italic">Hacé clic en 'Sacar Runa' para recibir tu mensaje personalizado.</p>
+
+                    <div id="rune-meaning-container" class="text-section" style="display: none;">
+                        <h3>Significado General:</h3>
+                        <div id="rune-meaning">-</div>
+                    </div>
+                     <div id="rune-significance-container" class="text-section" style="display: none;">
+                        <h3>Esta runa te aconseja:</h3>
+                        <div id="rune-significance">-</div>
+                    </div>
+                     <div id="rune-positive-message-container" class="text-section" style="display: none;">
+                         <h3 class="text-center">Mensaje Clave:</h3>
+                         <p id="rune-positive-message">-</p>
+                    </div>
+                     <div id="rune-exercise-container" class="text-section" style="display: none;">
+                        <h3>Ejercicio Sugerido:</h3>
+                        <div id="rune-exercise">-</div>
+                    </div>
+                </div></div><div class="button-container">
+                <button id="draw-rune-btn" class="action-btn">
+                    Sacar Runa
+                </button>
+                <button id="download-pdf-btn" class="action-btn" disabled>
+                    Descargar PDF
+                </button>
+            </div>
+
+        </div></div><script>
+        // Array 'runes' (sin cambios)
+        const runes = [
+             // FEHU
+            {
+                symbol: "ᚠ", name: "Fehu",
+                meaning: "Representa la riqueza, la abundancia, el éxito ganado, la prosperidad, la seguridad material, la fertilidad y la energía dinámica. Es el poder móvil y la recompensa por el esfuerzo. Llama a la generosidad y al uso responsable de los recursos, advirtiendo contra la avaricia.",
+                significance_for_consultant: "Fehu llega a vos, consultante, como un augurio de prosperidad y realización material fruto de tu esfuerzo. Es momento de reconocer tu valor y atraer la abundancia que merecés. Evaluá cómo gestionás tus recursos (dinero, tiempo, energía, talentos). ¿Estás permitiendo que fluyan libremente? ¿Compartís tu buena fortuna? Esta runa te impulsa a actuar con confianza en la provisión universal y a sentir gratitud por lo que ya tenés. Preparate para cosechar, pero recordá que la verdadera riqueza crece cuando se comparte.",
+                positive_message: "Sos un imán para la abundancia. Confiá en tu capacidad para crear y gestionar la prosperidad.",
+                exercise: "Ejercicio 'Inventario de Abundancia': Hacé una lista detallada de todas las formas de 'riqueza' en tu vida (no solo dinero: salud, relaciones, talentos, conocimientos, alegrías diarias). Luego, cada día durante una semana, elegí un elemento de esa lista y agradecelo conscientemente. Realizá también un pequeño acto de generosidad (material o inmaterial) cada día."
+            },
+            // URUZ
+            {
+                symbol: "ᚢ", name: "Uruz",
+                meaning: "Encarna la fuerza bruta primordial, la energía vital indomable, la resistencia física y mental, la salud robusta y la perseverancia. Simboliza el potencial crudo, la curación y la afirmación de la vida. Llama a conectar con la fuerza interior y la independencia, advirtiendo contra la fuerza mal dirigida.",
+                significance_for_consultant: "Uruz irrumpe en tu lectura, consultante, para recordarte la inmensa fuerza vital que reside en vos. ¿Enfrentás un desafío o necesitás un impulso de energía? Esta runa te asegura que poseés la resistencia y el poder crudo necesarios para superar cualquier obstáculo. Es un llamado a conectar con tu instinto, tu salud y tu capacidad de auto-sanación. Canalizá esta potente energía con propósito y consciencia; no dejes que se desboque. Es tiempo de afirmar tu independencia y tu derecho a vivir plenamente.",
+                positive_message: "Tu fuerza interior es ilimitada. Conectate con tu poder primordial y avanzá sin miedo.",
+                exercise: "Ejercicio 'Anclaje de Fuerza': Buscá un lugar tranquilo en la naturaleza (o imaginalo vívidamente). Ponete de pie descalzo/a si es posible. Sentí la conexión con la tierra. Respirá profundamente e imaginá que extraés energía vital y fuerza bruta de la tierra, sintiendo cómo recorre tu cuerpo. Visualizate superando un desafío actual con esta energía. Repetí afirmaciones como 'Soy fuerte', 'Soy resistente'."
+            },
+            // THURISAZ
+            {
+                symbol: "ᚦ", name: "Thurisaz",
+                meaning: "Representa la espina, el gigante, la fuerza reactiva, el conflicto, la defensa y la destrucción necesaria. Es el poder de establecer límites y actuar con contundencia. Simboliza la puerta o umbral. Llama a la introspección antes de actuar y a canalizar la fuerza con sabiduría, advirtiendo contra la agresión impulsiva.",
+                significance_for_consultant: "Thurisaz aparece, consultante, para señalar una energía potente y potencialmente disruptiva en tu vida. Puede ser una advertencia o una herramienta. ¿Necesitás defenderte o establecer límites claros? ¿Hay un obstáculo que debe ser eliminado, quizás incluso de forma contundente? Esta runa te pide actuar con precaución y consciencia. Antes de reaccionar, reflexioná. Canalizá esta fuerza para protegerte o para abrir un nuevo camino, pero evitá la agresión ciega. Es un momento para el coraje dirigido y la acción calculada.",
+                positive_message: "Tenés el poder de protegerte y de eliminar obstáculos. Usá tu fuerza con sabiduría y precisión.",
+                exercise: "Ejercicio 'Escudo Protector y Espina Consciente': Visualizá una barrera de energía protectora a tu alrededor, como una esfera de luz espinosa que te defiende de negatividad externa. Luego, identificá una situación donde necesites actuar con más firmeza o eliminar un bloqueo. Planificá mentalmente la acción más efectiva y menos dañina posible, como usar una 'espina' precisa para pinchar un globo, no para herir."
+            },
+            // ANSUZ
+            {
+                symbol: "ᚨ", name: "Ansuz",
+                meaning: "La runa de Odín, representa la comunicación (divina y humana), la sabiduría, la inspiración, la palabra, la poesía y el aprendizaje. Simboliza la importancia de escuchar y expresarse con claridad. Llama a buscar la verdad y usar las palabras con responsabilidad, advirtiendo contra el engaño.",
+                significance_for_consultant: "Ansuz te habla, consultante, de la importancia de la comunicación y la sabiduría en tu momento actual. Prestá atención a los mensajes que recibís, tanto externos (consejos, información) como internos (intuición, sueños). Es un tiempo propicio para aprender, enseñar, escribir o expresarte creativamente. Buscá la claridad en tus palabras y asegurate de que transmitan tu verdad. ¿Hay algo que necesites decir o escuchar? Esta runa te anima a conectar con tu sabiduría interior y a comunicarte desde un lugar de autenticidad.",
+                positive_message: "Tu voz tiene poder y sabiduría. Comunicate con claridad y escuchá atentamente los mensajes del universo.",
+                exercise: "Ejercicio 'Diario de Sabiduría y Comunicación': Dedicá unos minutos cada día a escribir libremente tus pensamientos, ideas o mensajes intuitivos. También, practicá la escucha activa en tus conversaciones: concentrate realmente en entender al otro antes de responder. Si necesitás expresar algo importante, ensayá decirlo en voz alta primero para encontrar las palabras justas."
+            },
+            // RAIDHO
+            {
+                symbol: "ᚱ", name: "Raidho",
+                meaning: "Simboliza el viaje (físico y espiritual), el movimiento ordenado, el ritmo, la rueda, el carro y la rectitud. Representa tomar el control del propio camino y seguir el orden correcto. Llama a actuar con ética y propósito, advirtiendo contra la rigidez o perder el rumbo.",
+                significance_for_consultant: "Raidho marca tu camino, consultante, señalando un viaje o un movimiento significativo en tu vida. Puede ser un desplazamiento físico, pero más a menudo se refiere a tomar las riendas de tu dirección vital. ¿Estás en control de tu rumbo? ¿Actuás de acuerdo a tus valores y en el orden correcto? Esta runa te impulsa a planificar, a tomar decisiones conscientes y a avanzar con propósito y disciplina. Es el momento de asegurarte de que tu 'carro' va en la dirección correcta y de que seguís tu propio código ético.",
+                positive_message: "Estás en el camino correcto. Avanzá con orden, ritmo y determinación hacia tus metas.",
+                exercise: "Ejercicio 'Mapa del Viaje Vital': Dibujá un mapa simple de tu vida actual y hacia dónde querés ir en un área específica (trabajo, relaciones, crecimiento personal). Marcá los pasos necesarios (como paradas en el camino). Revisá si tus acciones diarias están alineadas con ese destino. Ajustá tu 'ruta' si es necesario para mantener el orden y el propósito."
+            },
+            // KENAZ
+            {
+                symbol: "ᚲ", name: "Kenaz",
+                meaning: "La antorcha, representa la luz del conocimiento, la iluminación, la creatividad controlada, la claridad mental y la solución de problemas. Simboliza la inspiración, la habilidad técnica y la transformación a través del saber. Llama a explorar el potencial y compartir la luz, advirtiendo contra la ignorancia.",
+                significance_for_consultant: "Kenaz ilumina tu situación, consultante, trayendo claridad, conocimiento y una chispa de inspiración creativa. Es un momento excelente para aprender algo nuevo, resolver un problema complejo o dar forma a una idea. La 'antorcha' disipa las sombras de la duda o la confusión. Confiá en tu capacidad intelectual y en tu habilidad para manifestar tus talentos. ¿Qué conocimiento necesitás adquirir o aplicar? ¿Qué proyecto creativo te llama? Abrí tu mente a nuevas perspectivas y compartí tu luz con los demás.",
+                positive_message: "La claridad y la inspiración están con vos. Iluminá tu camino con conocimiento y creatividad.",
+                exercise: "Ejercicio 'Encender la Antorcha Interior': Identificá un área de tu vida donde necesites más claridad o una solución creativa. Dedicá tiempo a investigar, estudiar o simplemente a reflexionar sobre ello con la intención de 'encender una luz'. Probá una técnica de brainstorming o escritura libre. Visualizá una antorcha encendiéndose en tu mente, iluminando nuevas posibilidades."
+            },
+             // GEBO
+            {
+                symbol: "ᚷ", name: "Gebo",
+                meaning: "El regalo, simboliza la generosidad, la asociación, el intercambio equilibrado, la unión y la hospitalidad. Representa dar y recibir en armonía. Llama a la gratitud y la reciprocidad. No tiene posición invertida, su esencia es el equilibrio.",
+                significance_for_consultant: "Gebo llega a vos, consultante, como un símbolo de conexión y equilibrio en tus relaciones. Habla de la importancia del dar y recibir justos, ya sea en asociaciones, amistades o amor. ¿Estás en equilibrio en tus intercambios? ¿Recibís tanto como das? Esta runa puede anunciar un regalo, una nueva alianza fructífera o la necesidad de fortalecer los lazos existentes a través de la generosidad y la gratitud mutua. Es un recordatorio de que las conexiones auténticas se basan en la reciprocidad.",
+                positive_message: "El equilibrio en dar y recibir trae armonía y fortalece tus vínculos. Abrí tu corazón a la conexión.",
+                exercise: "Ejercicio 'Balanza de Intercambio': Elegí una relación importante. Durante unos días, observá conscientemente el flujo de dar y recibir (tiempo, apoyo, afecto, recursos). ¿Está equilibrado/a? Si no, pensá en una pequeña acción para restaurar la armonía, ya sea ofreciendo algo más (un gesto, ayuda) o aprendiendo a recibir con más gracia si tendés a dar demasiado."
+            },
+            // WUNJO
+            {
+                symbol: "ᚹ", name: "Wunjo",
+                meaning: "Representa la alegría, la armonía, el bienestar, la realización de deseos, la camaradería y la satisfacción. Simboliza la culminación exitosa, la paz interior y la pertenencia. Llama a disfrutar del presente y cultivar relaciones positivas, advirtiendo contra la ilusión.",
+                significance_for_consultant: "¡Wunjo trae alegría a tu vida, consultante! Esta runa anuncia un período de felicidad, armonía y satisfacción. Es probable que veas cumplidos algunos deseos o que disfrutes de momentos de paz y bienestar en tus relaciones y en tu entorno. Celebrá tus logros, disfrutá de la compañía de tus seres queridos y permitite sentir el gozo. Es un momento para el optimismo y para alinear tus acciones con aquello que te trae verdadera felicidad. Reconocé y apreciá las bendiciones presentes.",
+                positive_message: "La alegría y la armonía están a tu alcance. Disfrutá de las bendiciones y compartí tu felicidad.",
+                exercise: "Ejercicio 'Cosecha de Alegría': Cada día durante una semana, identificá y anotá al menos tres momentos, sensaciones o interacciones que te hayan producido alegría o bienestar, por pequeños que sean. Al final de la semana, releé tu 'cosecha' y reflexioná sobre qué actividades, personas o actitudes fomentan tu Wunjo personal."
+            },
+            // HAGALAZ
+            {
+                symbol: "ᚺ", name: "Hagalaz",
+                meaning: "El granizo, representa la disrupción incontrolable, la crisis repentina, el cambio inevitable y la destrucción necesaria para la transformación. Simboliza eventos externos que obligan a adaptarse. Llama a la aceptación y la resiliencia, advirtiendo contra la resistencia inútil.",
+                significance_for_consultant: "Hagalaz irrumpe, consultante, señalando una posible crisis o un cambio disruptivo e inevitable en tu camino. Pueden ser eventos externos que escapan a tu control y que sacuden tus estructuras actuales. Aunque pueda parecer negativo, esta runa es una fuerza de la naturaleza que limpia y purifica, eliminando lo que ya no sirve. No te resistas al cambio; buscá la lección oculta en la tormenta. Es un momento para desarrollar resiliencia, adaptabilidad y fe en tu capacidad para reconstruir sobre bases más sólidas.",
+                positive_message: "Aunque la tormenta sea fuerte, tenés la resiliencia para superarla y renacer más fuerte.",
+                exercise: "Ejercicio 'Refugio Interior y Aceptación': Cuando sientas que el 'granizo' cae (metafóricamente), cerrá los ojos y visualizá un refugio seguro/a y tranquilo/a dentro de vos. Respirá profundo. Repetí mentalmente: 'Acepto lo que no puedo controlar. Confío en mi capacidad para adaptarme'. Identificá una pequeña cosa que SÍ puedas controlar en medio del caos y enfocate en ella."
+            },
+            // NAUTHIZ
+            {
+                symbol: "ᚾ", name: "Nauthiz",
+                meaning: "La necesidad, la restricción, la carencia, la fricción que genera voluntad. Representa limitaciones, dificultades y deseos insatisfechos que impulsan a actuar. Simboliza la resistencia bajo presión y la superación. Llama a la perseverancia y la gestión de recursos, advirtiendo contra la desesperación.",
+                significance_for_consultant: "Nauthiz te confronta, consultante, con una sensación de necesidad, limitación o deseo insatisfecho. Podés sentirte restringido/a o bajo presión. Sin embargo, esta runa no es solo negativa; es la fricción que enciende el fuego de la voluntad y la creatividad. Te impulsa a reconocer tus verdaderas necesidades, a ser ingenioso/a con tus recursos y a perseverar a pesar de las dificultades. Es un momento para la autodisciplina, la paciencia y para aprender a distinguir lo esencial de lo superfluo. La necesidad agudiza el ingenio.",
+                positive_message: "Las limitaciones actuales son el combustible para tu determinación y creatividad. Superarás esta prueba.",
+                exercise: "Ejercicio 'Fuego de la Necesidad': Identificá claramente la 'necesidad' o limitación principal que sentís. Luego, en lugar de lamentarte, hacé una lista de todos los recursos (internos y externos) que SÍ tenés. Pensá creativamente en cómo usar esos recursos para aliviar la necesidad o sortear la limitación. Encendé tu 'fuego' interior con determinación."
+            },
+            // ISA
+            {
+                symbol: "ᛁ", name: "Isa",
+                meaning: "El hielo, representa el estancamiento, la inmovilidad, la pausa necesaria, la concentración y la introspección. Simboliza la claridad que surge de la quietud y la preservación de energía. Llama a la calma y la paciencia, advirtiendo contra la rigidez o el aislamiento.",
+                significance_for_consultant: "Isa te envuelve, consultante, en un período de quietud o aparente estancamiento. Las cosas pueden parecer congeladas o bloqueadas. No luches contra esta pausa; es necesaria. Aprovechala para la introspección, la reflexión y la concentración. Conservá tu energía en lugar de malgastarla intentando forzar el movimiento. Observá la situación con claridad cristalina. La paciencia es clave ahora. Este 'hielo' eventualmente se derretirá, y estarás mejor preparado/a si has utilizado este tiempo para centrarte y consolidar tus fuerzas.",
+                positive_message: "La quietud trae claridad y concentración. Aprovechá esta pausa para fortalecerte desde adentro.",
+                exercise: "Ejercicio 'Meditación del Hielo': Sentate en silencio durante unos minutos cada día. Visualizá un paisaje helado, tranquilo/a y silencioso/a. Con cada respiración, sentí cómo tu mente se calma y se enfoca. Observá tus pensamientos sin juzgarlos, como si fueran copos de nieve cayendo. Permitite simplemente 'ser' en la quietud, conservando tu energía."
+            },
+            // JERA
+            {
+                symbol: "ᛃ", name: "Jera",
+                meaning: "El año, la cosecha, los ciclos naturales, la recompensa por el esfuerzo paciente. Representa la culminación de un proceso, causa y efecto, y la justicia kármica. Simboliza la paciencia y la comprensión de los ritmos. Llama a la confianza en los procesos y la planificación a largo plazo.",
+                significance_for_consultant: "Jera te anuncia, consultante, la llegada de la cosecha. Es el momento de recoger los frutos de tus esfuerzos pasados, siempre y cuando hayas sembrado con paciencia y diligencia. Esta runa habla de ciclos, de la ley de causa y efecto, y de que todo llega a su debido tiempo. Si has trabajado duro, esperá recompensas. Si un ciclo está terminando, preparate para el siguiente. Confiá en los ritmos naturales de la vida y tené paciencia si los resultados aún no son visibles. Lo que sembrás, cosecharás.",
+                positive_message: "La paciencia y el esfuerzo dan sus frutos. Preparate para recibir la merecida recompensa de tus acciones.",
+                exercise: "Ejercicio 'Revisión del Ciclo': Reflexioná sobre un proyecto o área de tu vida que esté en curso. ¿En qué fase del ciclo te encontrás (siembra, crecimiento, maduración, cosecha)? ¿Qué acciones necesitás realizar en esta fase para asegurar una buena 'cosecha' futura? Agradecé los esfuerzos pasados y planificá los siguientes pasos con paciencia."
+            },
+            // EIHWAZ
+            {
+                symbol: "ᛇ", name: "Eihwaz",
+                meaning: "El tejo, árbol de vida y muerte, simboliza la resistencia, la defensa, la conexión entre mundos, la perseverancia y la columna vertebral espiritual. Representa la iniciación y la superación de miedos. Llama a la fortaleza interior y la conexión con las raíces.",
+                significance_for_consultant: "Eihwaz se presenta, consultante, como un pilar de fortaleza y resistencia en tu vida. Puede que estés atravesando una prueba difícil o enfrentando miedos profundos. Esta runa te asegura que tenés la fuerza interior y la conexión espiritual necesarias para perseverar. Es un símbolo de defensa, pero también de conexión con la sabiduría ancestral y la capacidad de navegar entre diferentes niveles de realidad. Confiá en tu 'columna vertebral' espiritual. Este desafío es una iniciación que te hará más fuerte y sabio/a.",
+                positive_message: "Poseés una profunda resistencia y conexión espiritual. Sos más fuerte de lo que creés.",
+                exercise: "Ejercicio 'Enraizamiento del Tejo': De pie, imaginá que tus pies echan raíces profundas en la tierra, como las de un tejo milenario. Sentí la estabilidad y la fuerza que sube desde la tierra. Al mismo tiempo, visualizá la copa del árbol (tu cabeza) conectándose con el cielo. Sentí cómo sos un canal entre la tierra y el cielo, fuerte y flexible. Mantené esta visualización por unos minutos."
+            },
+            // PERTHRO
+            {
+                symbol: "ᛈ", name: "Perthro",
+                meaning: "El cubilete de dados, representa el misterio, el azar, el destino (Wyrd), la adivinación, lo oculto y la revelación. Simboliza la intuición y jugar con las posibilidades. Llama a aceptar lo desconocido y explorar el subconsciente.",
+                significance_for_consultant: "Perthro envuelve tu situación en un velo de misterio, consultante. Hay algo oculto, algo que aún no se revela completamente. Esta runa te invita a confiar en tu intuición, a estar atento/a a las sincronicidades y a aceptar el papel del azar o el destino. Puede indicar una sorpresa, una revelación inesperada o la necesidad de explorar tu subconsciente (a través de sueños, meditación). No fuerces las respuestas; permití que el misterio se desvele a su propio ritmo. Jugá con las posibilidades, pero con consciencia.",
+                positive_message: "Confiá en tu intuición para navegar lo desconocido. Hay secretos esperando ser revelados.",
+                exercise: "Ejercicio 'Escucha Intuitiva y Sincronicidades': Prestá especial atención a tus corazonadas, sueños e intuiciones durante los próximos días. Anotalos. También, mantenete alerta a las 'coincidencias significativas' o sincronicidades en tu entorno. Reflexioná sobre qué mensajes podrían estar tratando de transmitirte estas señales sutiles del universo."
+            },
+            // ALGIZ
+            {
+                symbol: "ᛉ", name: "Algiz",
+                meaning: "El alce o la mano extendida, simboliza la protección divina, la defensa, la conexión con la conciencia superior y el instinto de preservación. Representa el escudo protector y la guía espiritual. Llama a la vigilancia y la confianza en la protección.",
+                significance_for_consultant: "Algiz extiende su protección sobre vos, consultante. Esta runa es un poderoso escudo contra la negatividad y una señal de conexión con tus guías espirituales o tu Yo Superior. Te encontrás en un espacio seguro/a o estás siendo llamado/a a fortalecer tus defensas psíquicas y establecer límites saludables. Confiá en tus instintos de preservación y escuchá atentamente tu guía interior. Mantenete alerta y consciente, pero sabé que una fuerza superior te protege y te apoya en tu camino.",
+                positive_message: "Estás protegido/a y guiado/a. Confiá en tu conexión espiritual y en tus instintos.",
+                exercise: "Ejercicio 'Esfera de Protección Algiz': Visualizá la runa Algiz (como una Y con brazos hacia arriba) brillando frente a vos. Imaginá que se expande hasta formar una esfera de luz protectora a tu alrededor, impenetrable a cualquier energía negativa. Sentí la seguridad y la conexión con lo divino dentro de esta esfera. Podés reforzar esta visualización cada mañana."
+            },
+            // SOWILO
+            {
+                symbol: "ᛋ", name: "Sowilo",
+                meaning: "El Sol, representa la energía vital, el éxito, la claridad, la fuerza de voluntad, la plenitud y la iluminación. Simboliza la victoria, la confianza y el poder personal bien dirigido. Llama a actuar con confianza y permitir que la luz brille, advirtiendo contra el ego.",
+                significance_for_consultant: "¡Sowilo brilla intensamente para vos, consultante! Esta runa es un presagio de éxito, vitalidad y claridad. Es el poder del Sol que disipa las sombras y te llena de energía y confianza. Es un momento excelente para actuar con decisión hacia tus metas, expresar tu verdad y permitir que tu luz interior resplandezca. Tenés la fuerza de voluntad y la claridad necesarias para lograr grandes cosas. Aprovechá esta energía solar para avanzar, sanar y manifestar tu máximo potencial. ¡Es tu momento de brillar!",
+                positive_message: "El éxito, la vitalidad y la claridad te acompañan. ¡Permití que tu luz interior brille con toda su fuerza!",
+                exercise: "Ejercicio 'Baño de Sol Interior': Sentate cómodamente y cerrá los ojos. Visualizá un sol brillante y cálido en el centro de tu pecho (plexo solar). Sentí cómo su luz y calor se expanden por todo tu cuerpo, llenándote de energía, confianza y optimismo. Mantené la visualización unos minutos, sintiendo cómo disuelve cualquier duda o negatividad. Si podés, tomá un poco de sol real también."
+            },
+            // TIWAZ
+            {
+                symbol: "ᛏ", name: "Tiwaz",
+                meaning: "La runa del dios Tyr, representa el honor, la justicia, el liderazgo, el sacrificio por un bien mayor, la victoria justa y la disciplina. Simboliza la valentía, la determinación y la adhesión a los principios. Llama a la integridad y a luchar por lo correcto.",
+                significance_for_consultant: "Tiwaz te llama a actuar con honor y determinación, consultante. Esta runa, asociada al dios Tyr, habla de justicia, liderazgo y la valentía de defender tus principios, incluso si requiere un sacrificio. ¿Estás enfrentando una situación que requiere coraje y rectitud? ¿Necesitás luchar por una causa justa o tomar una decisión basada en tus valores más profundos? Tiwaz te da la fuerza y la disciplina para hacerlo. Actuá con integridad, sé un líder justo/a (aunque sea solo de tu propia vida) y mantené tu palabra.",
+                positive_message: "Actuá con honor, valentía y justicia. La victoria acompaña a quienes defienden sus principios.",
+                exercise: "Ejercicio 'Declaración de Principios y Acción': Identificá un principio o valor fundamental para vos que sientas que necesitás defender o encarnar más activamente. Escribilo claramente. Luego, definí una acción concreta, por pequeña que sea, que puedas realizar en los próximos días para vivir ese principio con más integridad y determinación."
+            },
+            // BERKANO
+            {
+                symbol: "ᛒ", name: "Berkano",
+                meaning: "El abedul, simboliza el nacimiento, la fertilidad, el crecimiento, los nuevos comienzos, la energía femenina nutricia, la curación y la renovación. Representa el hogar y el poder suave pero persistente. Llama a la paciencia y al cuidado.",
+                significance_for_consultant: "Berkano trae una energía de crecimiento y nuevos comienzos a tu vida, consultante. Como el abedul que renace, esta runa habla de fertilidad (en ideas, proyectos o literalmente), de nutrición y de desarrollo gradual. Es un momento excelente para empezar algo nuevo, cuidar de vos mismo/a o de otros, o sanar viejas heridas. La energía es suave, paciente y protectora, como la de una madre. Confiá en el proceso de crecimiento y nutrí aquello que deseás ver florecer en tu vida. Es tiempo de crear y cuidar.",
+                positive_message: "Nuevos comienzos y crecimiento fértil te esperan. Nutrí tus proyectos y a vos mismo/a con cuidado y paciencia.",
+                exercise: "Ejercicio 'Sembrar y Nutrir una Intención': Elegí una 'semilla' (una idea, un proyecto, un hábito saludable) que quieras ver crecer. Escribila. Luego, cada día durante una semana, realizá una pequeña acción para 'regar' o 'nutrir' esa semilla (investigar, planificar, practicar, cuidarte). Visualizá cómo crece fuerte y saludable."
+            },
+            // EHWAZ
+            {
+                symbol: "ᛖ", name: "Ehwaz",
+                meaning: "El caballo, representa el movimiento, el progreso, la asociación armoniosa, la confianza mutua, el viaje rápido y la adaptabilidad. Simboliza la conexión fluida y el trabajo en equipo. Llama a la confianza, la colaboración y avanzar con fluidez.",
+                significance_for_consultant: "Ehwaz te impulsa hacia adelante, consultante, señalando movimiento, progreso y la importancia de la colaboración. Como dos caballos tirando de un carro, esta runa habla de asociaciones armoniosas, confianza mutua y trabajo en equipo. Puede indicar un cambio positivo (mudanza, viaje), un avance rápido en tus proyectos o la necesidad de sincronizarte mejor con alguien. Es un momento para ser adaptable, comunicarte fluidamente y confiar en tus 'compañeros/as de viaje'. El progreso se acelera cuando trabajás en armonía con otros.",
+                positive_message: "El progreso y el movimiento fluido están favorecidos, especialmente a través de la colaboración armoniosa.",
+                exercise: "Ejercicio 'Sincronización en Equipo': Pensá en una relación o colaboración importante (pareja, socio/a, equipo). ¿Cómo podrías mejorar la 'sincronización' y la confianza mutua? Proponé una conversación honesta o realizá un gesto que demuestre tu compromiso y confianza en la otra parte para avanzar juntos de manera más fluida."
+            },
+            // MANNAZ
+            {
+                symbol: "ᛗ", name: "Mannaz",
+                meaning: "El ser humano, representa la humanidad, la autoconciencia, la interdependencia social, la inteligencia racional y la cooperación. Simboliza la necesidad de autoconocimiento y la relación con los demás. Llama a la humildad, la objetividad y la colaboración.",
+                significance_for_consultant: "Mannaz te refleja a vos mismo/a, consultante, y tu relación con la red humana. Esta runa te invita a la autoconciencia: ¿quién sos vos realmente, más allá de tus roles sociales? También destaca la importancia de la comunidad, la cooperación y tu interdependencia con los demás. Es un momento para la reflexión sobre tu identidad, tus talentos y cómo te relacionás con tu entorno social. Buscá la objetividad, la humildad y reconocé el valor tanto de tu individualidad como de tu pertenencia al colectivo.",
+                positive_message: "Reconocé tu valor individual y tu conexión con la humanidad. La autoconciencia y la cooperación te fortalecen.",
+                exercise: "Ejercicio 'Espejo Social y Autoconocimiento': Pedile a una persona de confianza que te describa honestamente (tus fortalezas y áreas de mejora). Reflexioná sobre esa perspectiva externa sin juzgar. Luego, dedicá tiempo a meditar sobre tu propia identidad: ¿Cuáles son tus valores centrales? ¿Qué te hace único/a? ¿Cómo podés contribuir mejor al colectivo?"
+            },
+            // LAGUZ
+            {
+                symbol: "ᛚ", name: "Laguz",
+                meaning: "El agua, representa el flujo, la intuición, las emociones, el inconsciente, la purificación y la adaptación. Simboliza seguir la corriente y conectar con lo femenino receptivo. Llama a la fluidez y la escucha interior, advirtiendo contra el ahogarse en emociones.",
+                significance_for_consultant: "Laguz fluye hacia vos, consultante, trayendo el poder del agua: intuición, emociones y el flujo de la vida. Es un llamado a conectar con tu lado intuitivo, a prestar atención a tus sueños y sentimientos, y a permitir que las cosas fluyan sin resistencia. Puede ser un momento de limpieza emocional o de profunda conexión espiritual. Confiá en tu 'saber' interior más que en la lógica pura. Adaptate a las circunstancias como el agua se adapta a su cauce. Permití que tus emociones fluyan, pero no te dejes arrastrar por ellas.",
+                positive_message: "Confiá en el flujo de la vida y en tu poderosa intuición. Permití que tus emociones te guíen y te limpien.",
+                exercise: "Ejercicio 'Fluir con el Agua': Dedicá tiempo cerca del agua (real o imaginada: un río, el mar, una fuente). Observá su movimiento, su sonido. Respirá al ritmo del agua. Si tenés una preocupación, imaginala como una hoja que depositás en el agua y dejás que se la lleve la corriente. Practicá dejar ir el control y confiar en el flujo natural de las cosas."
+            },
+            // INGWAZ
+            {
+                symbol: "ᛜ", name: "Ingwaz",
+                meaning: "La runa del dios Ing/Freyr, representa la fertilidad, la gestación, el potencial interno, la culminación de una etapa y la concentración de energía antes de la expansión. Simboliza la semilla. Llama a la paciencia y a completar asuntos pendientes.",
+                significance_for_consultant: "Ingwaz marca un momento de gestación y potencial concentrado para vos, consultante. Como una semilla que contiene un árbol entero, llevás dentro una energía poderosa que está a punto de manifestarse. Puede indicar la culminación exitosa de una fase importante o un período de descanso necesario antes de un nuevo y gran comienzo. Es crucial completar los ciclos actuales y acumular tus fuerzas. Tené paciencia; la manifestación está cerca, pero requiere este tiempo de integración interna. Confiá en el poder que se está gestando dentro de vos.",
+                positive_message: "Un gran potencial está gestándose en tu interior. Confiá en el proceso y preparate para la manifestación.",
+                exercise: "Ejercicio 'Incubadora de Potencial': Identificá un proyecto o aspecto de tu vida que sientas que está en fase de 'gestación'. Creá un espacio simbólico (una caja, un rincón de tu casa) o mental para 'incubar' esta energía. Dedicale tiempo regularmente (meditación, planificación tranquila, cuidado) sin forzar su salida. Confiá en que madurará a su debido tiempo."
+            },
+            // DAGAZ
+            {
+                symbol: "ᛞ", name: "Dagaz",
+                meaning: "El día, representa el despertar, la claridad, la transformación, la iluminación repentina y el equilibrio entre opuestos. Simboliza el amanecer y la esperanza. Llama a abrazar el cambio y mantener una actitud positiva.",
+                significance_for_consultant: "¡Dagaz trae la luz del día a tu situación, consultante! Esta runa anuncia un despertar, una transformación positiva o una claridad repentina que ilumina tu camino. Es el amanecer después de la noche, un momento de gran avance y optimismo. Las paradojas se resuelven, la oscuridad se disipa. Abrazá este cambio con confianza y mantené una perspectiva positiva. Es un punto de inflexión significativo donde la comprensión y la esperanza reemplazan la duda o la confusión. ¡Un nuevo día ha comenzado para vos!",
+                positive_message: "La claridad, la transformación y un nuevo amanecer han llegado. Abrazá la luz y el cambio positivo.",
+                exercise: "Ejercicio 'Saludo al Nuevo Día': Al despertar cada mañana durante unos días, tomate un momento para saludar conscientemente al nuevo día (aunque esté nublado). Sentí la energía del amanecer y afirmá: 'Hoy es un nuevo comienzo. Abrazo la claridad y la transformación positiva'. Visualizá la luz disipando cualquier sombra en tu mente o en tu vida."
+            },
+            // OTHALA
+            {
+                symbol: "ᛟ", name: "Othala",
+                meaning: "La herencia, el hogar ancestral, el legado, la propiedad, el sentido de pertenencia y las tradiciones. Simboliza la conexión con las raíces y la sabiduría de los ancestros. Llama a valorar las tradiciones y cuidar del patrimonio.",
+                significance_for_consultant: "Othala te conecta con tus raíces, consultante. Esta runa habla de herencia, hogar, familia y legado. Puede señalar asuntos relacionados con propiedades, tradiciones familiares o la importancia de tu sentido de pertenencia. ¿Qué has heredado (no solo materialmente, sino también valores, talentos, creencias)? ¿Cómo te relacionás con tu hogar y tu linaje? Es un momento para honrar a tus ancestros, valorar tus raíces y quizás delimitar lo que es verdaderamente 'tuyo'. Fortalecé tu base y cuidá de tu patrimonio.",
+                positive_message: "Tus raíces te dan fuerza y pertenencia. Honrá tu herencia y construí sobre bases sólidas.",
+                exercise: "Ejercicio 'Árbol Genealógico de Valores': Reflexioná sobre tu familia y ancestros. ¿Qué valores, tradiciones o fortalezas positivas sentís que has heredado? Hacé una lista o un pequeño 'árbol genealógico' de estas cualidades. Pensá en cómo podés honrar o integrar mejor estas herencias positivas en tu vida actual."
+            }
+        ];
+
+        // --- Lógica JavaScript ---
+        const drawButton = document.getElementById('draw-rune-btn');
+        const downloadPdfButton = document.getElementById('download-pdf-btn'); // Botón PDF
+        const runeSymbolElement = document.getElementById('rune-symbol');
+        const runeNameElement = document.getElementById('rune-name');
+        const runeMeaningContainer = document.getElementById('rune-meaning-container');
+        const runeSignificanceContainer = document.getElementById('rune-significance-container');
+        const runePositiveMessageContainer = document.getElementById('rune-positive-message-container');
+        const runeExerciseContainer = document.getElementById('rune-exercise-container');
+        const runeMeaningElement = document.getElementById('rune-meaning');
+        const runeSignificanceElement = document.getElementById('rune-significance');
+        const runePositiveMessageElement = document.getElementById('rune-positive-message');
+        const runeExerciseElement = document.getElementById('rune-exercise');
+        const pdfContentArea = document.getElementById('pdf-content-area'); // Área a capturar
+        const placeholderMessageElement = document.getElementById('placeholder-message');
+
+        let isAnimating = false;
+        let currentRuneName = ''; // Para el nombre del archivo PDF
+
+        function drawRandomRune() {
+            if (isAnimating) return;
+            isAnimating = true;
+            downloadPdfButton.disabled = true; // Desactivar PDF mientras anima
+
+            placeholderMessageElement.style.display = 'none';
+            runeMeaningContainer.style.display = 'none';
+            runeSignificanceContainer.style.display = 'none';
+            runePositiveMessageContainer.style.display = 'none';
+            runeExerciseContainer.style.display = 'none';
+            runeSymbolElement.style.display = 'flex';
+            runeNameElement.style.display = 'block';
+            runeNameElement.textContent = '...';
+
+            let rollCount = 0;
+            const maxRolls = 15;
+            const rollInterval = 50;
+
+            const rollAnimation = setInterval(() => {
+                const randomSymbol = runes[Math.floor(Math.random() * runes.length)].symbol;
+                runeSymbolElement.textContent = randomSymbol;
+                runeSymbolElement.classList.add('rolling');
+                setTimeout(() => runeSymbolElement.classList.remove('rolling'), rollInterval / 2);
+                rollCount++;
+                if (rollCount >= maxRolls) {
+                    clearInterval(rollAnimation);
+                    displayFinalRune();
+                }
+            }, rollInterval);
+        }
+
+        function displayFinalRune() {
+            const randomIndex = Math.floor(Math.random() * runes.length);
+            const randomRune = runes[randomIndex];
+            currentRuneName = randomRune.name; // Guardar nombre para PDF
+
+            runeSymbolElement.textContent = randomRune.symbol;
+            runeSymbolElement.classList.add('rolling');
+             setTimeout(() => runeSymbolElement.classList.remove('rolling'), 700);
+
+            runeNameElement.textContent = randomRune.name;
+
+            runeMeaningElement.textContent = randomRune.meaning;
+            runeSignificanceElement.textContent = randomRune.significance_for_consultant;
+            runePositiveMessageElement.textContent = randomRune.positive_message;
+            runeExerciseElement.textContent = randomRune.exercise;
+
+            runeMeaningContainer.style.display = 'block';
+            runeSignificanceContainer.style.display = 'block';
+            runePositiveMessageContainer.style.display = 'block';
+            runeExerciseContainer.style.display = 'block';
+
+            downloadPdfButton.disabled = false; // Activar botón PDF
+            isAnimating = false;
+        }
+
+        function initializeInterface() {
+             runeSymbolElement.style.display = 'none';
+             runeNameElement.style.display = 'none';
+             placeholderMessageElement.style.display = 'block';
+             runeMeaningContainer.style.display = 'none';
+             runeSignificanceContainer.style.display = 'none';
+             runePositiveMessageContainer.style.display = 'none';
+             runeExerciseContainer.style.display = 'none';
+             downloadPdfButton.disabled = true; // Asegurar que PDF esté desactivado
+        }
+
+        // Función para descargar PDF
+        function downloadPDF() {
+            if (!currentRuneName || !pdfContentArea) return; // No hacer nada si no hay runa o área
+
+            const buttonsToHide = document.querySelectorAll('.button-container');
+            const originalDisplayButtons = [];
+             buttonsToHide.forEach(btn => {
+                 originalDisplayButtons.push(btn.style.display);
+                 btn.style.display = 'none';
+             });
+
+            // Guardar fuente original y aplicar fuente estándar para captura
+            const originalFont = pdfContentArea.style.fontFamily;
+            pdfContentArea.style.fontFamily = 'serif'; // Usar fuente genérica serif
+
+            // Usar html2canvas para capturar el área de contenido
+            html2canvas(pdfContentArea, {
+                 scale: 2,
+                 useCORS: true,
+                 backgroundColor: '#ffffff'
+                }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+
+                const pdfWidth = 210;
+                const pdfHeight = 297;
+                const margin = 15;
+                const contentWidth = pdfWidth - 2 * margin;
+                const imgProps = canvas;
+                const imgHeight = (imgProps.height * contentWidth) / imgProps.width;
+                let currentHeight = margin;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+
+                 // Añadir título al PDF (usando fuente estándar)
+                 pdf.setFont('helvetica', 'bold'); // Usar fuente estándar como helvetica
+                 pdf.setFontSize(16);
+                 pdf.setTextColor('#1a202c');
+                 pdf.text(`Lectura de Runa: ${currentRuneName}`, pdfWidth / 2, currentHeight, { align: 'center' });
+                 currentHeight += 10;
+
+                let finalImgHeight = imgHeight;
+                if (currentHeight + imgHeight > pdfHeight - margin) {
+                    finalImgHeight = pdfHeight - margin - currentHeight;
+                    console.warn("El contenido capturado es muy largo para una sola página A4, podría cortarse.");
+                 }
+
+                pdf.addImage(imgData, 'PNG', margin, currentHeight, contentWidth, finalImgHeight);
+
+                pdf.save(`Oraculo_Runa_${currentRuneName}.pdf`);
+
+            }).catch(error => {
+                console.error("Error generando el PDF:", error);
+            }).finally(() => {
+                 // Restaurar fuente original y visibilidad de botones SIEMPRE
+                 pdfContentArea.style.fontFamily = originalFont;
+                 buttonsToHide.forEach((btn, index) => {
+                     btn.style.display = originalDisplayButtons[index] || 'flex';
+                 });
+            });
+        }
+
+
+        // Event listeners
+        drawButton.addEventListener('click', drawRandomRune);
+        downloadPdfButton.addEventListener('click', downloadPDF);
+
+        // Inicializar interfaz al cargar
+         document.addEventListener('DOMContentLoaded', initializeInterface);
+
+    </script>
+
+</body>
+</html>
